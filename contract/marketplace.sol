@@ -43,14 +43,16 @@ contract WorkFactory {
         return WorkContracts[_address];
     }
 }
-
+// 1858122
+// 1846025
+// 1843031
 contract Work {
     uint internal Workforce = 0;
     uint internal Assignments = 0;
     uint public platfee;
-    address public platowner;
+    address private immutable i_platowner;
 
-    address internal cUsdTokenAddress =
+    address internal  cUsdTokenAddress =
         0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
     struct Worker {
@@ -82,11 +84,11 @@ contract Work {
     mapping(uint => Assignment) internal AssignmentsToDo;
 
     constructor(address _platowner) {
-        platowner = _platowner;
+        i_platowner = _platowner;
     }
 
     modifier OnlyOwner() {
-        require(msg.sender == platowner);
+        require(msg.sender == i_platowner);
         _;
     }
 
@@ -107,13 +109,6 @@ contract Work {
         platfee = _newfee;
     }
 
-    /**
-     * @dev Adds a new worker to the contract.
-     * @param _name The name of the worker.
-     * @param _image The image associated with the worker.
-     * @param _description A description of the worker's skills and experience.
-     * AddtoWorkforce function to set the workers mapping to true for a registered worker. This is to ensure that only registered workers can submit work for assignments.
-     */
     function AddtoWorkforce(
         string calldata _name,
         string calldata _image,
@@ -180,11 +175,12 @@ contract Work {
         uint _index,
         string calldata _submissions
     ) public OnlyRegistered returns (uint) {
-        uint SubId = AssignmentsToDo[_index].SubmissionCounter;
+        Assignment storage assignmentToSubmit = AssignmentsToDo[_index];
+        uint SubId = assignmentToSubmit.SubmissionCounter;
         submissions[_index][SubId] = _submissions;
         submitterList[_index][SubId] = msg.sender;
 
-        AssignmentsToDo[_index].SubmissionCounter++;
+        assignmentToSubmit.SubmissionCounter++;
 
         return (SubId);
     }
@@ -220,13 +216,14 @@ contract Work {
         uint _Aindex,
         uint _Sindex
     ) public returns (string memory, address) {
-        AssignmentsToDo[_Aindex].BestSubmission = submissions[_Aindex][_Sindex];
-        AssignmentsToDo[_Aindex].BestSubmitter = payable(
+        Assignment storage NewAssigment = AssignmentsToDo[_Aindex];
+        NewAssigment.BestSubmission = submissions[_Aindex][_Sindex];
+        NewAssigment.BestSubmitter = payable(
             submitterList[_Aindex][_Sindex]
         );
         return (
-            AssignmentsToDo[_Aindex].BestSubmission,
-            AssignmentsToDo[_Aindex].BestSubmitter
+            NewAssigment.BestSubmission,
+            NewAssigment.BestSubmitter
         );
     }
 
